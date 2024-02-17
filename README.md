@@ -1,11 +1,11 @@
-# skiplist
-Golang templated skiplist 
-
-模板化的跳表
+# template skiplist
+模板化的跳表 Golang template skiplist
 
 模板语法需要go sdk 1.18或以上，如果代码下下来有编译错误要先升到1.18
 
-基本使用
+Template of Golang is supported only for Go SDK 1.18 or above.
+
+## 基本使用 / Quick start
 
 ```go
 package main
@@ -57,9 +57,11 @@ func main() {
 
 ! 排名规则是最小的元素排名值是1，最大的是倒数第1（等于元素个数）。0不会出现在排名的值里，和数组下标概念不一样。
 
-! 不提供单独修改一个元素的值（.v）的接口，因为这个操作还要调整这个节点在链表里的位置。
+! rank of elements are 1 to length(elements)
 
-如果上层应用需要提供update值的操作，请在上层update里使用DeleteByKey()再Add()。
+! 不提供单独修改一个元素的值（.v）的接口，因为这个操作还要调整这个节点在链表里的位置。 如果上层应用需要提供update值的操作，请在上层update里使用```DeleteByKey()```再```Add()```。
+
+! update the value of existing node is not supported. if your design needs the operation of "update value only", please use ```DeleteByKey()``` and ```Add()``` orderly.
 ```go
 type appStruct struct{
 	set *skiplist.SkipList[keyType, valueType]
