@@ -33,12 +33,12 @@ type SkipListNode[KeyType comparable] struct {
 	isTail      bool
 }
 
-func (sln *SkipListNode[KeyType]) Key() KeyType {
-	return sln.v.Key()
-}
-func (sln *SkipListNode[KeyType]) Less(other ISkiplistElement[KeyType]) bool {
-	return sln.v.Less(other)
-}
+//func (sln *SkipListNode[KeyType]) Key() KeyType {
+//	return sln.v.Key()
+//}
+//func (sln *SkipListNode[KeyType]) Less(other ISkiplistElement[KeyType]) bool {
+//	return sln.v.Less(other)
+//}
 
 //func (sln *SkipListNode[KeyType]) GetV() ISkiplistElement[KeyType] {
 //	return sln.v
@@ -408,7 +408,7 @@ func (sl *SkipList[KeyType]) delete(e *SkipListNode[KeyType]) (ret error) {
 			}
 		}
 	}
-	delete(sl.dict, e.Key())
+	delete(sl.dict, e.v.Key())
 	return nil
 }
 
@@ -484,7 +484,7 @@ func (sl *SkipList[KeyType]) GetReverseRankByKey(key KeyType) (ret int32, err er
 	return sl.GetReverseRank(v.v)
 }
 
-func (sl *SkipList[KeyType]) GetElementByRank(rank int32) (ret *SkipListNode[KeyType], err error) {
+func (sl *SkipList[KeyType]) getNodeByRank(rank int32) (ret *SkipListNode[KeyType], err error) {
 	if rank <= 0 || rank > sl.GetElementsCount() {
 		return nil, fmt.Errorf("SkipList::GetElementByRank error, input rank %d is out of range(total elements: %d)", rank, sl.GetElementsCount())
 	}
@@ -512,12 +512,17 @@ func (sl *SkipList[KeyType]) GetElementByRank(rank int32) (ret *SkipListNode[Key
 	return nil, fmt.Errorf("SkipList::GetElementByRank error, input rank %d not found", rank)
 }
 
-func (sl *SkipList[KeyType]) GetElementByReverseRank(rank int32) (ret ISkiplistElement[KeyType], err error) {
-	node, err := sl.GetElementByRank(sl.GetElementsCount() + 1 - rank)
+func (sl *SkipList[KeyType]) GetElementByRank(rank int32) (ret ISkiplistElement[KeyType], err error) {
+	node, err := sl.getNodeByRank(rank)
 	if err != nil {
-		return nil, fmt.Errorf("SkipList::GetElementByReverseRank error: %s", err.Error())
+		return
 	}
-	return node.v, nil
+	ret = node.v
+	return
+}
+
+func (sl *SkipList[KeyType]) GetElementByReverseRank(rank int32) (ret ISkiplistElement[KeyType], err error) {
+	return sl.GetElementByRank(sl.GetElementsCount() + 1 - rank)
 }
 
 func (sl *SkipList[KeyType]) GetRange(rankStart, rankEnd int32) (ret []ISkiplistElement[KeyType], err error) {
@@ -528,7 +533,7 @@ func (sl *SkipList[KeyType]) GetRange(rankStart, rankEnd int32) (ret []ISkiplist
 		return nil, fmt.Errorf("SkipList::GetRange error, input rank %d or %d is out of range(total elements: %d)", rankStart, rankEnd, sl.GetElementsCount())
 	}
 	ret = make([]ISkiplistElement[KeyType], 0, rankEnd-rankStart+1)
-	startNode, err := sl.GetElementByRank(rankStart)
+	startNode, err := sl.getNodeByRank(rankStart)
 	if err != nil {
 		return
 	}
