@@ -39,6 +39,9 @@ func (sln *SkipListNode[KeyType]) Key() KeyType {
 func (sln *SkipListNode[KeyType]) Less(other ISkiplistElement[KeyType]) bool {
 	return sln.v.Less(other)
 }
+func (sln *SkipListNode[KeyType]) GetV() ISkiplistElement[KeyType] {
+	return sln.v
+}
 
 func (sln *SkipListNode[KeyType]) insertFront(node *SkipListNode[KeyType]) {
 	if sln == nil || node == nil {
