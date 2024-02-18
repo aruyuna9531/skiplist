@@ -1,3 +1,3 @@
-module test
+module skiplist
 
 go 1.18
