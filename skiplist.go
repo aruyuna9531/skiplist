@@ -19,12 +19,12 @@ const (
 	sameKeyOperate = SameKeyRejected // add了相同key的元素时处理方式
 )
 
-type SkipListNode[KeyType comparable, ValueType any] struct {
-	v        ISkiplistElement[KeyType, ValueType]
-	frontPtr *SkipListNode[KeyType, ValueType]
-	backPtr  *SkipListNode[KeyType, ValueType]
-	downPtr  *SkipListNode[KeyType, ValueType]
-	upPtr    *SkipListNode[KeyType, ValueType]
+type SkipListNode[KeyType comparable] struct {
+	v        ISkiplistElement[KeyType]
+	frontPtr *SkipListNode[KeyType]
+	backPtr  *SkipListNode[KeyType]
+	downPtr  *SkipListNode[KeyType]
+	upPtr    *SkipListNode[KeyType]
 
 	nodeInLayer int32
 	span        int32 // 与它的front之间的数据节点数（包括自身对应的底层节点，不包括front对应的）
@@ -33,18 +33,14 @@ type SkipListNode[KeyType comparable, ValueType any] struct {
 	isTail      bool
 }
 
-func (sln *SkipListNode[KeyType, ValueType]) Key() KeyType {
+func (sln *SkipListNode[KeyType]) Key() KeyType {
 	return sln.v.Key()
 }
-
-func (sln *SkipListNode[KeyType, ValueType]) Value() ValueType {
-	return sln.v.Value()
-}
-func (sln *SkipListNode[KeyType, ValueType]) Less(other ISkiplistElement[KeyType, ValueType]) bool {
+func (sln *SkipListNode[KeyType]) Less(other ISkiplistElement[KeyType]) bool {
 	return sln.v.Less(other)
 }
 
-func (sln *SkipListNode[KeyType, ValueType]) insertFront(node *SkipListNode[KeyType, ValueType]) {
+func (sln *SkipListNode[KeyType]) insertFront(node *SkipListNode[KeyType]) {
 	if sln == nil || node == nil {
 		return
 	}
@@ -64,7 +60,7 @@ func (sln *SkipListNode[KeyType, ValueType]) insertFront(node *SkipListNode[KeyT
 }
 
 // pushUpperLayer 在本节点的上一层创建索引节点
-func (sln *SkipListNode[KeyType, ValueType]) pushUpperLayer() {
+func (sln *SkipListNode[KeyType]) pushUpperLayer() {
 	if sln == nil || sln.upPtr != nil {
 		return
 	}
@@ -96,7 +92,7 @@ func (sln *SkipListNode[KeyType, ValueType]) pushUpperLayer() {
 	} else {
 		backTo = backTo.upPtr
 	}
-	node := &SkipListNode[KeyType, ValueType]{
+	node := &SkipListNode[KeyType]{
 		v:           sln.v,
 		frontPtr:    frontTo,
 		backPtr:     backTo,
@@ -119,7 +115,7 @@ func (sln *SkipListNode[KeyType, ValueType]) pushUpperLayer() {
 	}
 }
 
-func (sln *SkipListNode[KeyType, ValueType]) findNearestUpperBack() *SkipListNode[KeyType, ValueType] {
+func (sln *SkipListNode[KeyType]) findNearestUpperBack() *SkipListNode[KeyType] {
 	if sln == nil {
 		return nil
 	}
@@ -132,7 +128,7 @@ func (sln *SkipListNode[KeyType, ValueType]) findNearestUpperBack() *SkipListNod
 	}
 	return backTo.upPtr
 }
-func (sln *SkipListNode[KeyType, ValueType]) findNearestUpperFront() *SkipListNode[KeyType, ValueType] {
+func (sln *SkipListNode[KeyType]) findNearestUpperFront() *SkipListNode[KeyType] {
 	if sln == nil {
 		return nil
 	}
@@ -147,7 +143,7 @@ func (sln *SkipListNode[KeyType, ValueType]) findNearestUpperFront() *SkipListNo
 }
 
 // compareNode -1 比入参小 / 0 与入参等值 / 1 比入参大 TODO 是否限制同层比较
-func (sln *SkipListNode[KeyType, ValueType]) compareNode(other *SkipListNode[KeyType, ValueType]) int {
+func (sln *SkipListNode[KeyType]) compareNode(other *SkipListNode[KeyType]) int {
 	if sln.isHead && !other.isHead {
 		return -1
 	}
@@ -169,7 +165,7 @@ func (sln *SkipListNode[KeyType, ValueType]) compareNode(other *SkipListNode[Key
 	return 0
 }
 
-func (sln *SkipListNode[KeyType, ValueType]) compareElem(k ISkiplistElement[KeyType, ValueType]) int {
+func (sln *SkipListNode[KeyType]) compareElem(k ISkiplistElement[KeyType]) int {
 	if sln.isHead {
 		return -1
 	}
@@ -185,31 +181,31 @@ func (sln *SkipListNode[KeyType, ValueType]) compareElem(k ISkiplistElement[KeyT
 	return 0
 }
 
-type SkipList[KeyType comparable, ValueType any] struct {
-	layersHead map[int32]*SkipListNode[KeyType, ValueType]
-	layersTail map[int32]*SkipListNode[KeyType, ValueType]
-	dict       map[KeyType]*SkipListNode[KeyType, ValueType] // kv检索图
+type SkipList[KeyType comparable] struct {
+	layersHead map[int32]*SkipListNode[KeyType]
+	layersTail map[int32]*SkipListNode[KeyType]
+	dict       map[KeyType]*SkipListNode[KeyType] // kv检索图
 }
 
-func NewSkipList[KeyType comparable, ValueType any]() *SkipList[KeyType, ValueType] {
-	return &SkipList[KeyType, ValueType]{
-		layersHead: make(map[int32]*SkipListNode[KeyType, ValueType]),
-		layersTail: make(map[int32]*SkipListNode[KeyType, ValueType]),
-		dict:       make(map[KeyType]*SkipListNode[KeyType, ValueType]),
+func NewSkipList[KeyType comparable]() *SkipList[KeyType] {
+	return &SkipList[KeyType]{
+		layersHead: make(map[int32]*SkipListNode[KeyType]),
+		layersTail: make(map[int32]*SkipListNode[KeyType]),
+		dict:       make(map[KeyType]*SkipListNode[KeyType]),
 	}
 }
-func (sl *SkipList[KeyType, ValueType]) GetLayersCount() int32 {
+func (sl *SkipList[KeyType]) GetLayersCount() int32 {
 	return int32(len(sl.layersHead))
 }
 
-func (sl *SkipList[KeyType, ValueType]) GetElementsCount() int32 {
+func (sl *SkipList[KeyType]) GetElementsCount() int32 {
 	if sl == nil {
 		return 0
 	}
 	return int32(len(sl.dict))
 }
 
-func (sl *SkipList[KeyType, ValueType]) Add(e ISkiplistElement[KeyType, ValueType]) (ret error) {
+func (sl *SkipList[KeyType]) Add(e ISkiplistElement[KeyType]) (ret error) {
 	if sl == nil {
 		return fmt.Errorf("Sortset::Add error: self pointer = nil")
 	}
@@ -227,7 +223,7 @@ func (sl *SkipList[KeyType, ValueType]) Add(e ISkiplistElement[KeyType, ValueTyp
 			}
 		}
 	}
-	node := &SkipListNode[KeyType, ValueType]{
+	node := &SkipListNode[KeyType]{
 		v:           e,
 		frontPtr:    nil,
 		backPtr:     nil,
@@ -242,13 +238,13 @@ func (sl *SkipList[KeyType, ValueType]) Add(e ISkiplistElement[KeyType, ValueTyp
 		}
 	}()
 	if sl.GetElementsCount() == 0 {
-		sl.layersHead[baseLayer] = &SkipListNode[KeyType, ValueType]{
+		sl.layersHead[baseLayer] = &SkipListNode[KeyType]{
 			frontPtr:    node,
 			nodeInLayer: baseLayer,
 			span:        1,
 			isHead:      true,
 		}
-		sl.layersTail[baseLayer] = &SkipListNode[KeyType, ValueType]{
+		sl.layersTail[baseLayer] = &SkipListNode[KeyType]{
 			backPtr:     node,
 			nodeInLayer: baseLayer,
 			span:        0,
@@ -310,12 +306,12 @@ func (sl *SkipList[KeyType, ValueType]) Add(e ISkiplistElement[KeyType, ValueTyp
 										panic("p = nil when loop is not finished")
 									}
 								}
-								hNode := &SkipListNode[KeyType, ValueType]{
+								hNode := &SkipListNode[KeyType]{
 									downPtr:     sl.layersHead[np.nodeInLayer],
 									nodeInLayer: np.nodeInLayer + 1,
 									isHead:      true,
 								}
-								tNode := &SkipListNode[KeyType, ValueType]{
+								tNode := &SkipListNode[KeyType]{
 									downPtr:     sl.layersTail[np.nodeInLayer],
 									upPtr:       nil,
 									nodeInLayer: np.nodeInLayer + 1,
@@ -343,7 +339,7 @@ func (sl *SkipList[KeyType, ValueType]) Add(e ISkiplistElement[KeyType, ValueTyp
 	return nil
 }
 
-func (sl *SkipList[KeyType, ValueType]) delete(e *SkipListNode[KeyType, ValueType]) (ret error) {
+func (sl *SkipList[KeyType]) delete(e *SkipListNode[KeyType]) (ret error) {
 	h := sl.layersHead[sl.GetLayersCount()]
 	for p := h; p != nil && !p.isTail; {
 		if p.compareNode(e) == 0 {
@@ -412,7 +408,7 @@ func (sl *SkipList[KeyType, ValueType]) delete(e *SkipListNode[KeyType, ValueTyp
 	return nil
 }
 
-func (sl *SkipList[KeyType, ValueType]) DeleteByKey(key KeyType) (ret error) {
+func (sl *SkipList[KeyType]) DeleteByKey(key KeyType) (ret error) {
 	v, exist := sl.dict[key]
 	if !exist {
 		return fmt.Errorf("SkipList::DeleteByKey error: key %v not exist", key)
@@ -420,7 +416,7 @@ func (sl *SkipList[KeyType, ValueType]) DeleteByKey(key KeyType) (ret error) {
 	return sl.delete(v)
 }
 
-func (sl *SkipList[KeyType, ValueType]) find(e ISkiplistElement[KeyType, ValueType]) (val *SkipListNode[KeyType, ValueType], err error) {
+func (sl *SkipList[KeyType]) find(e ISkiplistElement[KeyType]) (val *SkipListNode[KeyType], err error) {
 	v, exist := sl.dict[e.Key()]
 	if !exist {
 		return nil, fmt.Errorf("SkipList::Find error: key %v not exist", e.Key())
@@ -428,7 +424,7 @@ func (sl *SkipList[KeyType, ValueType]) find(e ISkiplistElement[KeyType, ValueTy
 	return v, nil
 }
 
-func (sl *SkipList[KeyType, ValueType]) FindByKey(key KeyType) (val *SkipListNode[KeyType, ValueType], err error) {
+func (sl *SkipList[KeyType]) FindByKey(key KeyType) (val *SkipListNode[KeyType], err error) {
 	v, exist := sl.dict[key]
 	if !exist {
 		return nil, fmt.Errorf("SkipList::FindByKey error: key %v not exist", key)
@@ -436,7 +432,7 @@ func (sl *SkipList[KeyType, ValueType]) FindByKey(key KeyType) (val *SkipListNod
 	return v, nil
 }
 
-func (sl *SkipList[KeyType, ValueType]) getRank(e ISkiplistElement[KeyType, ValueType]) (ret int32, err error) {
+func (sl *SkipList[KeyType]) getRank(e ISkiplistElement[KeyType]) (ret int32, err error) {
 	_, err = sl.find(e)
 	if err != nil {
 		return
@@ -459,7 +455,7 @@ func (sl *SkipList[KeyType, ValueType]) getRank(e ISkiplistElement[KeyType, Valu
 	return
 }
 
-func (sl *SkipList[KeyType, ValueType]) GetRankByKey(key KeyType) (ret int32, err error) {
+func (sl *SkipList[KeyType]) GetRankByKey(key KeyType) (ret int32, err error) {
 	v, err := sl.FindByKey(key)
 	if err != nil {
 		return
@@ -467,7 +463,7 @@ func (sl *SkipList[KeyType, ValueType]) GetRankByKey(key KeyType) (ret int32, er
 	return sl.getRank(v.v)
 }
 
-func (sl *SkipList[KeyType, ValueType]) GetReverseRank(e ISkiplistElement[KeyType, ValueType]) (ret int32, err error) {
+func (sl *SkipList[KeyType]) GetReverseRank(e ISkiplistElement[KeyType]) (ret int32, err error) {
 	ret, err = sl.getRank(e)
 	if err != nil {
 		return
@@ -476,7 +472,7 @@ func (sl *SkipList[KeyType, ValueType]) GetReverseRank(e ISkiplistElement[KeyTyp
 	return
 }
 
-func (sl *SkipList[KeyType, ValueType]) GetReverseRankByKey(key KeyType) (ret int32, err error) {
+func (sl *SkipList[KeyType]) GetReverseRankByKey(key KeyType) (ret int32, err error) {
 	v, err := sl.FindByKey(key)
 	if err != nil {
 		return
@@ -484,7 +480,7 @@ func (sl *SkipList[KeyType, ValueType]) GetReverseRankByKey(key KeyType) (ret in
 	return sl.GetReverseRank(v.v)
 }
 
-func (sl *SkipList[KeyType, ValueType]) GetElementByRank(rank int32) (ret *SkipListNode[KeyType, ValueType], err error) {
+func (sl *SkipList[KeyType]) GetElementByRank(rank int32) (ret *SkipListNode[KeyType], err error) {
 	if rank <= 0 || rank > sl.GetElementsCount() {
 		return nil, fmt.Errorf("SkipList::GetElementByRank error, input rank %d is out of range(total elements: %d)", rank, sl.GetElementsCount())
 	}
@@ -511,18 +507,18 @@ func (sl *SkipList[KeyType, ValueType]) GetElementByRank(rank int32) (ret *SkipL
 	}
 	return nil, fmt.Errorf("SkipList::GetElementByRank error, input rank %d not found", rank)
 }
-func (sl *SkipList[KeyType, ValueType]) GetElementByReverseRank(rank int32) (ret *SkipListNode[KeyType, ValueType], err error) {
+func (sl *SkipList[KeyType]) GetElementByReverseRank(rank int32) (ret *SkipListNode[KeyType], err error) {
 	return sl.GetElementByRank(sl.GetElementsCount() + 1 - rank)
 }
 
-func (sl *SkipList[KeyType, ValueType]) GetRange(rankStart, rankEnd int32) (ret []*SkipListNode[KeyType, ValueType], err error) {
+func (sl *SkipList[KeyType]) GetRange(rankStart, rankEnd int32) (ret []*SkipListNode[KeyType], err error) {
 	if rankStart > rankEnd {
 		rankStart, rankEnd = rankEnd, rankStart
 	}
 	if rankStart <= 0 || rankStart > sl.GetElementsCount() || rankEnd <= 0 || rankEnd > sl.GetElementsCount() {
 		return nil, fmt.Errorf("SkipList::GetRange error, input rank %d or %d is out of range(total elements: %d)", rankStart, rankEnd, sl.GetElementsCount())
 	}
-	ret = make([]*SkipListNode[KeyType, ValueType], 0, rankEnd-rankStart+1)
+	ret = make([]*SkipListNode[KeyType], 0, rankEnd-rankStart+1)
 	startNode, err := sl.GetElementByRank(rankStart)
 	if err != nil {
 		return
@@ -539,7 +535,7 @@ func (sl *SkipList[KeyType, ValueType]) GetRange(rankStart, rankEnd int32) (ret 
 	return
 }
 
-func (sl *SkipList[KeyType, ValueType]) GetReverseRange(rankRevStart, rankRevEnd int32) (ret []*SkipListNode[KeyType, ValueType], err error) {
+func (sl *SkipList[KeyType]) GetReverseRange(rankRevStart, rankRevEnd int32) (ret []*SkipListNode[KeyType], err error) {
 	if rankRevStart > rankRevEnd {
 		rankRevStart, rankRevEnd = rankRevEnd, rankRevStart
 	}
@@ -549,7 +545,7 @@ func (sl *SkipList[KeyType, ValueType]) GetReverseRange(rankRevStart, rankRevEnd
 	if err != nil {
 		return
 	}
-	ret = make([]*SkipListNode[KeyType, ValueType], 0, rankRevEnd-rankRevStart+1)
+	ret = make([]*SkipListNode[KeyType], 0, rankRevEnd-rankRevStart+1)
 	for i := len(r) - 1; i >= 0; i-- {
 		ret = append(ret, r[i])
 	}
@@ -557,7 +553,7 @@ func (sl *SkipList[KeyType, ValueType]) GetReverseRange(rankRevStart, rankRevEnd
 }
 
 // Print debug用 打印内部结构
-func (sl *SkipList[KeyType, ValueType]) Print() {
+func (sl *SkipList[KeyType]) Print() {
 	var b bytes.Buffer
 	for i := sl.GetLayersCount(); i >= baseLayer; i-- {
 		for p := sl.layersHead[i]; p != nil; p = p.frontPtr {
