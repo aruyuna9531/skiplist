@@ -39,9 +39,10 @@ func (sln *SkipListNode[KeyType]) Key() KeyType {
 func (sln *SkipListNode[KeyType]) Less(other ISkiplistElement[KeyType]) bool {
 	return sln.v.Less(other)
 }
-func (sln *SkipListNode[KeyType]) GetV() ISkiplistElement[KeyType] {
-	return sln.v
-}
+
+//func (sln *SkipListNode[KeyType]) GetV() ISkiplistElement[KeyType] {
+//	return sln.v
+//}
 
 func (sln *SkipListNode[KeyType]) insertFront(node *SkipListNode[KeyType]) {
 	if sln == nil || node == nil {
@@ -510,18 +511,23 @@ func (sl *SkipList[KeyType]) GetElementByRank(rank int32) (ret *SkipListNode[Key
 	}
 	return nil, fmt.Errorf("SkipList::GetElementByRank error, input rank %d not found", rank)
 }
-func (sl *SkipList[KeyType]) GetElementByReverseRank(rank int32) (ret *SkipListNode[KeyType], err error) {
-	return sl.GetElementByRank(sl.GetElementsCount() + 1 - rank)
+
+func (sl *SkipList[KeyType]) GetElementByReverseRank(rank int32) (ret ISkiplistElement[KeyType], err error) {
+	node, err := sl.GetElementByRank(sl.GetElementsCount() + 1 - rank)
+	if err != nil {
+		return nil, fmt.Errorf("SkipList::GetElementByReverseRank error: %s", err.Error())
+	}
+	return node.v, nil
 }
 
-func (sl *SkipList[KeyType]) GetRange(rankStart, rankEnd int32) (ret []*SkipListNode[KeyType], err error) {
+func (sl *SkipList[KeyType]) GetRange(rankStart, rankEnd int32) (ret []ISkiplistElement[KeyType], err error) {
 	if rankStart > rankEnd {
 		rankStart, rankEnd = rankEnd, rankStart
 	}
 	if rankStart <= 0 || rankStart > sl.GetElementsCount() || rankEnd <= 0 || rankEnd > sl.GetElementsCount() {
 		return nil, fmt.Errorf("SkipList::GetRange error, input rank %d or %d is out of range(total elements: %d)", rankStart, rankEnd, sl.GetElementsCount())
 	}
-	ret = make([]*SkipListNode[KeyType], 0, rankEnd-rankStart+1)
+	ret = make([]ISkiplistElement[KeyType], 0, rankEnd-rankStart+1)
 	startNode, err := sl.GetElementByRank(rankStart)
 	if err != nil {
 		return
@@ -532,13 +538,13 @@ func (sl *SkipList[KeyType]) GetRange(rankStart, rankEnd int32) (ret []*SkipList
 		if lp.isTail {
 			panic("SkipList::GetRange error, loop out of bounds(but rankEnd check passed)")
 		}
-		ret = append(ret, lp)
+		ret = append(ret, lp.v)
 		p = p.frontPtr
 	}
 	return
 }
 
-func (sl *SkipList[KeyType]) GetReverseRange(rankRevStart, rankRevEnd int32) (ret []*SkipListNode[KeyType], err error) {
+func (sl *SkipList[KeyType]) GetReverseRange(rankRevStart, rankRevEnd int32) (ret []ISkiplistElement[KeyType], err error) {
 	if rankRevStart > rankRevEnd {
 		rankRevStart, rankRevEnd = rankRevEnd, rankRevStart
 	}
@@ -548,7 +554,7 @@ func (sl *SkipList[KeyType]) GetReverseRange(rankRevStart, rankRevEnd int32) (re
 	if err != nil {
 		return
 	}
-	ret = make([]*SkipListNode[KeyType], 0, rankRevEnd-rankRevStart+1)
+	ret = make([]ISkiplistElement[KeyType], 0, rankRevEnd-rankRevStart+1)
 	for i := len(r) - 1; i >= 0; i-- {
 		ret = append(ret, r[i])
 	}
