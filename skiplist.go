@@ -428,12 +428,20 @@ func (sl *SkipList[KeyType]) find(e ISkiplistElement[KeyType]) (val *SkipListNod
 	return v, nil
 }
 
-func (sl *SkipList[KeyType]) FindByKey(key KeyType) (val *SkipListNode[KeyType], err error) {
+func (sl *SkipList[KeyType]) findByKey(key KeyType) (val *SkipListNode[KeyType], err error) {
 	v, exist := sl.dict[key]
 	if !exist {
 		return nil, fmt.Errorf("SkipList::FindByKey error: key %v not exist", key)
 	}
 	return v, nil
+}
+
+func (sl *SkipList[KeyType]) GetElementByKey(key KeyType) (val ISkiplistElement[KeyType], err error) {
+	node, err := sl.findByKey(key)
+	if err != nil {
+		return
+	}
+	return node.v, nil
 }
 
 func (sl *SkipList[KeyType]) getRank(e ISkiplistElement[KeyType]) (ret int32, err error) {
@@ -460,7 +468,7 @@ func (sl *SkipList[KeyType]) getRank(e ISkiplistElement[KeyType]) (ret int32, er
 }
 
 func (sl *SkipList[KeyType]) GetRankByKey(key KeyType) (ret int32, err error) {
-	v, err := sl.FindByKey(key)
+	v, err := sl.findByKey(key)
 	if err != nil {
 		return
 	}
@@ -477,7 +485,7 @@ func (sl *SkipList[KeyType]) GetReverseRank(e ISkiplistElement[KeyType]) (ret in
 }
 
 func (sl *SkipList[KeyType]) GetReverseRankByKey(key KeyType) (ret int32, err error) {
-	v, err := sl.FindByKey(key)
+	v, err := sl.findByKey(key)
 	if err != nil {
 		return
 	}
